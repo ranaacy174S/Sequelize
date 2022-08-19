@@ -17,9 +17,20 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  const product = new Product(null, title, imageUrl, description, price);
-  product.save();
-  res.redirect('/');
+  
+  Product.create({
+    title:title,
+    price:price,
+    imageUrl:imageUrl,
+    description:description
+  })
+  .then((res)=>{
+    console.log(res);
+    res.redirect('/')
+  })
+  .catch(err=>{
+    console.log(err)
+  })
 };
 
 exports.getEditProduct= (req,res,next)=>{
@@ -28,7 +39,8 @@ exports.getEditProduct= (req,res,next)=>{
     return res.redirect('/')
   }
   const prodId= req.params.productId;
-  Product.findById(prodId,(product)=>{
+  Product.findByPk(prodId)
+  .then((product)=>{
       if(!product){
         return res.redirect('/')
       }
@@ -38,6 +50,7 @@ exports.getEditProduct= (req,res,next)=>{
       editing:editMode,
       product:product
     })
+  
   })
   
 }
@@ -48,24 +61,40 @@ exports.postEditProduct=(req,res,next)=>{
   const imageUrl=req.body.imageUrl;
   const description=req.body.description;
   const price=req.body.price;
-  const updatedProduct=new Product(id,title,imageUrl,description,price);
-  console.log(id,'inside controller')
-  updatedProduct.save();
-  res.redirect('/admin/products')
+  Product.findByPk(id)
+  .then((product)=>{
+    product.title=title;
+    product.imageUrl=imageUrl;
+    product.description=description;
+    product.price=price;
+    return product.save()
+  })
+  .then(res.redirect('/admin/products'))
+  .catch(err=>{
+    console.log(err)
+  })
+  
 }
 
 exports.postDeleteProduct=(req, res, next)=>{
   const id=req.params.productId;
-  Product.deleteProductById(id)
-  res.redirect('/')
+  Product.findByPk(id)
+  .then((product)=>{
+    product.destroy()
+  })
+  .then(res.redirect('/admin/products'))
+  .catch(err=>{
+    console.log(err)
+  })
 }
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll(products => {
-    res.render('admin/products', {
-      prods: products,
-      pageTitle: 'Admin Products',
-      path: '/admin/products'
-    });
-  });
+  Product.findAll()
+  .then((products)=>{
+      res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products'
+      });
+    })
 };
